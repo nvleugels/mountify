@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "electron-store": "^8.1.0",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "electron-updater": "^5.4.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.6",
