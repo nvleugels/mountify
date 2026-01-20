@@ -11,6 +11,16 @@ async function init() {
   setupIPCListeners();
   await loadServers();
   await loadSettings();
+  // Populate app version in About section
+  try {
+    const verEl = document.getElementById('app-version');
+    if (verEl && window.electronAPI.getAppVersion) {
+      const v = await window.electronAPI.getAppVersion();
+      verEl.textContent = v || '-';
+    }
+  } catch (e) {
+    console.warn('Failed to set app version:', e);
+  }
   await refreshAvailableDrives(); // Load drives on startup
   console.log("Checking dependencies...");
   await checkDependencies();

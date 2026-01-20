@@ -847,6 +847,15 @@ ipcMain.handle("check-for-updates", async () => {
   }
 });
 
+// Expose app version to renderer
+ipcMain.handle("get-app-version", async () => {
+  try {
+    return app.getVersion();
+  } catch (e) {
+    return "";
+  }
+});
+
 // Quit and install handler for renderer (called when user accepts restart)
 ipcMain.handle("quit-and-install", async () => {
   if (autoUpdater && typeof autoUpdater.quitAndInstall === "function") {
