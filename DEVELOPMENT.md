@@ -253,12 +253,67 @@ const result = await window.electronAPI.myNewFeature(arg);
 
 ## Release Process
 
-1. Update version in `package.json`
-2. Update CHANGELOG.md
-3. Build: `npm run electron:build`
-4. Test the built application thoroughly
-5. Create GitHub release
-6. Upload installers from `release/` directory
+Follow these steps to create a new release and publish installers via CI. You can run the build locally to test, but the recommended flow is to push a tag and let the GitHub Actions workflow build and upload artifacts.
+
+1. Prepare
+
+- Ensure `main` is up-to-date and all changes are committed.
+- Update `CHANGELOG.md` with release notes for the new version.
+
+2. Bump version and create tag
+
+- Use `npm version` to bump the package version and create a tag:
+
+```bash
+# bump type: patch | minor | major
+npm version patch -m "chore(release): %s"
+```
+
+- This updates `package.json`, creates a commit and an annotated tag (e.g. `v1.0.1`).
+
+3. Push commits and tags
+
+```bash
+git push origin main --follow-tags
+```
+
+- Pushing the tag triggers the GitHub Actions workflow (`.github/workflows/release.yml`) which runs on a Windows runner and builds the installer(s).
+
+4. Monitor CI and verify artifacts
+
+- In GitHub, go to Actions → the workflow run for your tag and monitor logs.
+- When successful, open the Releases page for the tag and verify that the installer files are attached (the workflow uploads `release/*`).
+
+5. Test the installer
+
+- Download the installer and test installation on a Windows test machine or VM.
+- Confirm Mountify launches and core functionality (Add Server, Mount/Unmount) works.
+
+6. Publish/announce
+
+- Add release notes in GitHub Releases if desired and publish the release.
+
+Local build (optional)
+
+- To build locally for testing instead of CI:
+
+```powershell
+npm ci
+npm run build
+```
+
+- Note: On Windows, the build may require elevated privileges or Developer Mode to extract certain helper archives (symlink creation). If you see extraction errors, run the terminal as Administrator or enable Developer Mode.
+
+Auto-update testing
+
+- Install from a published release (vX.Y.Z).
+- Bump the version to a newer tag (vX.Y.Z+1), push the tag and wait for the new release.
+- The installed app should detect the update (the app calls `autoUpdater.checkForUpdatesAndNotify()` on startup), download it, and allow `quitAndInstall()` to finish the update.
+
+Notes
+
+- Ensure `GH_TOKEN` repository secret is set so the workflow can create releases and upload assets.
+- For public distribution it is recommended to enable code-signing (PFX) and configure `CSC_LINK` and `CSC_KEY_PASSWORD` as secrets; update `package.json` build settings and the workflow accordingly.
 
 ## Publishing & CI (GitHub Actions)
 
