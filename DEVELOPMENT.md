@@ -260,6 +260,54 @@ const result = await window.electronAPI.myNewFeature(arg);
 5. Create GitHub release
 6. Upload installers from `release/` directory
 
+## Publishing & CI (GitHub Actions)
+
+To enable automatic building and publishing of installers via GitHub Actions you need to provide a token that allows the workflow to create releases and upload assets.
+
+1. Create a Personal Access Token (PAT):
+
+- Go to https://github.com/settings/tokens (or use the GitHub CLI).
+- Click "Generate new token" → give it a descriptive name (e.g. "mountify-release-bot").
+- Select the `repo` scope (this allows creating releases and uploading assets).
+- Create token and copy the value — you will not be able to view it again.
+
+2. Add the token as a repository secret:
+
+- In the GitHub repo: Settings → Secrets and variables → Actions → New repository secret.
+- Name: `GH_TOKEN`
+- Value: paste the PAT you copied.
+
+Alternatively, using the GitHub CLI (if installed and authenticated):
+
+```bash
+# authenticate if needed
+gh auth login
+
+# set the secret (you will be prompted for the token value)
+gh secret set GH_TOKEN --repo nvleugels/mountify
+```
+
+3. Verify workflow and package.json:
+
+- Ensure `package.json` contains the correct `build.publish` entry with `owner: "nvleugels"` and `repo: "mountify"` (already configured).
+- The workflow `.github/workflows/release.yml` will run on tag pushes (`v*`) or when triggered manually.
+
+4. Create a release (trigger CI):
+
+- Locally tag and push a version tag to trigger the workflow:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+- Or create a release in the GitHub UI; the workflow can be triggered manually from the Actions tab if needed.
+
+Notes:
+
+- Use a PAT with least-privilege (repo scope). For organizational or automated setups you may prefer a machine user with a token.
+- If you intend to sign installers, store signing secrets (`CSC_LINK`, `CSC_KEY_PASSWORD`) in the repo secrets as well and update the workflow to load them.
+
 ## Resources
 
 - [Electron Documentation](https://www.electronjs.org/docs)

@@ -1,4 +1,3 @@
-
 # Mountify
 
 ![Mountify](https://img.shields.io/badge/version-1.0.0-blue.svg)
@@ -10,6 +9,7 @@ A small, focused app to mount SFTP servers as Windows drives. This README is org
 ## 🚀 Install & Run (User-focused)
 
 ### Download
+
 Download the latest release from the Releases page:
 
 - https://github.com/nvleugels/mountify/releases
