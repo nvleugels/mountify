@@ -72,8 +72,11 @@ function createWindow() {
 
   mainWindow.once("ready-to-show", () => {
     const settings = store.get("settings", {});
-    // Only show window if not set to start minimized, or if in dev mode
-    if (!settings.startMinimized || isDev) {
+    // Determine if launched with an explicit minimized flag (set via login item args)
+    const launchedMinimized =
+      process.argv && process.argv.includes("--minimized");
+    // Only show window if not set to start minimized (or launched with --minimized), or if in dev mode
+    if ((!settings.startMinimized && !launchedMinimized) || isDev) {
       mainWindow.show();
     }
     checkDependencies();
@@ -118,18 +121,32 @@ function createWindow() {
 }
 
 function createTray() {
-  const iconPath = path.join(__dirname, "../images/mountify.ico");
-  let trayIcon;
+  // Try several icon candidates to avoid empty tray icon on some systems
+  const iconCandidates = [
+    path.join(__dirname, "../images/mountify.ico"),
+    path.join(__dirname, "../images/mountify.png"),
+    path.join(__dirname, "../images/mountify-256.png"),
+  ];
 
-  try {
-    trayIcon = nativeImage.createFromPath(iconPath);
-    if (!trayIcon.isEmpty()) {
-      trayIcon = trayIcon.resize({ width: 16, height: 16 });
-    } else {
-      trayIcon = nativeImage.createEmpty();
+  let trayIcon = nativeImage.createEmpty();
+  for (const p of iconCandidates) {
+    try {
+      if (fs.existsSync(p)) {
+        const img = nativeImage.createFromPath(p);
+        if (!img.isEmpty()) {
+          // Resize if needed for crisp tray rendering
+          const size = img.getSize();
+          if (size.width > 16 || size.height > 16) {
+            trayIcon = img.resize({ width: 16, height: 16 });
+          } else {
+            trayIcon = img;
+          }
+          break;
+        }
+      }
+    } catch (e) {
+      console.warn("Tray icon load failed for", p, e);
     }
-  } catch (e) {
-    trayIcon = nativeImage.createEmpty();
   }
 
   tray = new Tray(trayIcon);
@@ -764,9 +781,14 @@ ipcMain.handle("save-settings", (event, settings) => {
   store.set("settings", settings);
 
   // Handle auto-start
-  app.setLoginItemSettings({
-    openAtLogin: settings.startWithWindows,
-  });
+  try {
+    app.setLoginItemSettings({
+      openAtLogin: settings.startWithWindows,
+      args: settings.startMinimized ? ["--minimized"] : [],
+    });
+  } catch (e) {
+    console.warn("setLoginItemSettings failed:", e);
+  }
 
   return { success: true };
 });
@@ -822,20 +844,11 @@ ipcMain.handle("check-for-updates", async () => {
   if (!autoUpdater)
     return { success: false, error: "auto-updater not available" };
   try {
-    // Trigger a manual check; events are forwarded to renderer via the listeners above
+    // Trigger a manual check; rely on autoUpdater events to notify renderer
+    // to avoid duplicate notifications (manual handler must not re-emit).
     const res = await autoUpdater.checkForUpdates();
 
-    // If electron-updater provides an updateInfo, emit the appropriate event
-    if (res && res.updateInfo) {
-      const info = res.updateInfo;
-      if (info.version && info.version !== app.getVersion()) {
-        mainWindow.webContents.send("update-available", info);
-      } else {
-        mainWindow.webContents.send("update-not-available", info);
-      }
-    }
-
-    // If a download promise exists, wire progress via original autoUpdater events
+    // Keep download promise wiring for error logging, but do not emit events
     if (res && res.downloadPromise) {
       res.downloadPromise.catch((e) => console.warn("Download failed:", e));
     }
@@ -890,6 +903,24 @@ ipcMain.handle("uninstall-dependency", async (event, name) => {
 app.whenReady().then(() => {
   createWindow();
   createTray();
+
+  // Ensure login/startup settings are applied on launch (covers cases
+  // where settings were changed previously but the login item wasn't set)
+  try {
+    const settings = store.get("settings", {});
+    if (settings.startWithWindows) {
+      // Include a `--minimized` arg when startMinimized is enabled so the
+      // launched process can hide itself immediately.
+      app.setLoginItemSettings({
+        openAtLogin: true,
+        args: settings.startMinimized ? ["--minimized"] : [],
+      });
+    } else {
+      app.setLoginItemSettings({ openAtLogin: false });
+    }
+  } catch (e) {
+    console.warn("Failed to apply login item settings:", e);
+  }
 
   // Auto-mount servers on startup
   const servers = store.get("servers", []);
