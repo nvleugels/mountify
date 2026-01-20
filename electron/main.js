@@ -145,7 +145,10 @@ function createTray() {
         const img = nativeImage.createFromPath(p);
         if (!img.isEmpty()) {
           const size = img.getSize();
-          trayIcon = size.width > 16 || size.height > 16 ? img.resize({ width: 16, height: 16 }) : img;
+          trayIcon =
+            size.width > 16 || size.height > 16
+              ? img.resize({ width: 16, height: 16 })
+              : img;
           break;
         }
       }
