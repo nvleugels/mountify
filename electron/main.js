@@ -53,7 +53,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
     },
-      icon: path.join(__dirname, "../images/mountify.ico"),
+    icon: path.join(__dirname, "../images/mountify.ico"),
     show: false,
     frame: true,
     backgroundColor: "#ffffff",
@@ -118,15 +118,17 @@ function createWindow() {
 }
 
 function createTray() {
-  const iconPath = path.join(__dirname, "../images/mountify.png");
+  const iconPath = path.join(__dirname, "../images/mountify.ico");
   let trayIcon;
 
   try {
     trayIcon = nativeImage.createFromPath(iconPath);
-    if (trayIcon.isEmpty()) {
+    if (!trayIcon.isEmpty()) {
+      trayIcon = trayIcon.resize({ width: 16, height: 16 });
+    } else {
       trayIcon = nativeImage.createEmpty();
     }
-  } catch {
+  } catch (e) {
     trayIcon = nativeImage.createEmpty();
   }
 
