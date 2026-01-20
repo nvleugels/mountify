@@ -77,6 +77,11 @@ function setupEventListeners() {
         // The main process will emit events for available/not-available and progress
         if (!res) {
           // Some hosts may return undefined; keep status until events arrive
+        } else if (res && res.success === false) {
+          // Show the error returned by main (for example when auto-updater is not available)
+          const errMsg = res.error || "Auto-updates not available";
+          if (statusEl) statusEl.textContent = errMsg;
+          showToast("Update", errMsg, "error");
         }
       } catch (err) {
         if (statusEl) statusEl.textContent = `Check failed: ${err.message}`;
