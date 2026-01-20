@@ -1,0 +1,6 @@
+<!-- Placeholder SVG icon - Replace with actual .ico file -->
+<svg width="256" height="256" xmlns="http://www.w3.org/2000/svg">
+  <rect width="256" height="256" fill="#3b82f6"/>
+  <path d="M128 64c-35.35 0-64 28.65-64 64s28.65 64 64 64 64-28.65 64-64-28.65-64-64-64zm0 96c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32z" fill="#fff"/>
+  <circle cx="128" cy="128" r="20" fill="#3b82f6"/>
+</svg>
