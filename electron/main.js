@@ -542,71 +542,115 @@ function mountServer(serverId) {
   const remotePath = server.remotePath || "/";
   const password = server.password || "";
 
-  // First, force unmount if the drive letter is already in use
-  exec(`net use ${driveLetter}: /delete /y`, { shell: "cmd.exe" }, () => {
-    // Wait a moment for the unmount to complete
-    setTimeout(() => {
-      // Construct SSHFS command with password
-      // Format: net use DRIVE: "\\sshfs\USER@HOST!PORT/PATH" PASSWORD
-      const sshfsCommand = `net use ${driveLetter}: "\\\\sshfs\\${server.username}@${server.host}!${port}${remotePath}" "${password}"`;
-
-      exec(sshfsCommand, { shell: "cmd.exe" }, (error, stdout, stderr) => {
-        // Check if the command failed based on exit code, not stderr
-        if (error && error.code !== 0) {
-          // Sanitize error message to remove password
-          let safeError = error.message.replace(
-            new RegExp(password.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
-            "***",
-          );
-          safeError = safeError.split("\n")[0];
-          showNotification("Mount Failed", `Failed to mount ${server.name}`);
-          mainWindow.webContents.send("mount-result", {
-            serverId,
-            success: false,
-            error: safeError,
-          });
+  // Helper: check existing mapping for drive letter
+  function checkExistingMapping(letter) {
+    return new Promise((resolve) => {
+      exec(`net use ${letter}:`, { shell: "cmd.exe" }, (err, stdout) => {
+        if (err) {
+          resolve({ exists: false });
           return;
         }
 
-        // Verify the mount actually succeeded by checking if the drive exists
-        exec(
-          `net use ${driveLetter}:`,
-          { shell: "cmd.exe" },
-          (verifyError, verifyStdout) => {
-            if (verifyError) {
-              // Mount failed
+        const out = (stdout || "").toString();
+        // If output contains 'Remote name' or the server host, consider it mapped
+        const matchesHost =
+          out.includes(server.host) || out.includes(server.username);
+        // Try to extract remote UNC path if present
+        const remoteMatch = out.match(/\\\\[^\s]+\\[^\s]+/);
+        const remote = remoteMatch ? remoteMatch[0] : null;
+        resolve({ exists: true, matchesHost, remote });
+      });
+    });
+  }
+
+  // Check if the drive already exists and maps to this server - if so, treat as success
+  checkExistingMapping(driveLetter).then((mapping) => {
+    const targetUNC = `\\\\sshfs\\${server.username}@${server.host}!${port}${remotePath}`;
+    if (mapping.exists && mapping.matchesHost) {
+      // Already mapped to this host - update state and return success
+      const updatedServers = servers.map((s) =>
+        s.id === serverId ? { ...s, isMounted: true } : s,
+      );
+      store.set("servers", updatedServers);
+      showNotification(
+        "Mounted",
+        `${server.name} already mounted as ${driveLetter}:`,
+      );
+      mainWindow.webContents.send("mount-result", {
+        serverId,
+        success: true,
+      });
+      mainWindow.webContents.send("servers-updated", updatedServers);
+      updateTrayMenu();
+      return;
+    }
+
+    // Not already mapped to this server - proceed with unmount (if any) then mount
+    exec(`net use ${driveLetter}: /delete /y`, { shell: "cmd.exe" }, () => {
+      // Wait a moment for the unmount to complete
+      setTimeout(() => {
+        // Construct SSHFS command with password
+        // Format: net use DRIVE: "\\sshfs\USER@HOST!PORT/PATH" PASSWORD
+        const sshfsCommand = `net use ${driveLetter}: "\\\\sshfs\\${server.username}@${server.host}!${port}${remotePath}" "${password}"`;
+
+        exec(sshfsCommand, { shell: "cmd.exe" }, (error, stdout, stderr) => {
+          // Check if the command failed based on exit code, not stderr
+          if (error && error.code !== 0) {
+            // Sanitize error message to remove password
+            let safeError = error.message.replace(
+              new RegExp(password.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
+              "***",
+            );
+            safeError = safeError.split("\n")[0];
+            showNotification("Mount Failed", `Failed to mount ${server.name}`);
+            mainWindow.webContents.send("mount-result", {
+              serverId,
+              success: false,
+              error: safeError,
+            });
+            return;
+          }
+
+          // Verify the mount actually succeeded by checking if the drive exists
+          exec(
+            `net use ${driveLetter}:`,
+            { shell: "cmd.exe" },
+            (verifyError, verifyStdout) => {
+              if (verifyError) {
+                // Mount failed
+                showNotification(
+                  "Mount Failed",
+                  `Failed to mount ${server.name}`,
+                );
+                mainWindow.webContents.send("mount-result", {
+                  serverId,
+                  success: false,
+                  error: "Mount verification failed - drive not accessible",
+                });
+                return;
+              }
+
+              // Update server status
+              const updatedServers = servers.map((s) =>
+                s.id === serverId ? { ...s, isMounted: true } : s,
+              );
+              store.set("servers", updatedServers);
+
               showNotification(
-                "Mount Failed",
-                `Failed to mount ${server.name}`,
+                "Mounted Successfully",
+                `${server.name} mounted as ${driveLetter}:`,
               );
               mainWindow.webContents.send("mount-result", {
                 serverId,
-                success: false,
-                error: "Mount verification failed - drive not accessible",
+                success: true,
               });
-              return;
-            }
-
-            // Update server status
-            const updatedServers = servers.map((s) =>
-              s.id === serverId ? { ...s, isMounted: true } : s,
-            );
-            store.set("servers", updatedServers);
-
-            showNotification(
-              "Mounted Successfully",
-              `${server.name} mounted as ${driveLetter}:`,
-            );
-            mainWindow.webContents.send("mount-result", {
-              serverId,
-              success: true,
-            });
-            mainWindow.webContents.send("servers-updated", updatedServers);
-            updateTrayMenu();
-          },
-        );
-      });
-    }, 500);
+              mainWindow.webContents.send("servers-updated", updatedServers);
+              updateTrayMenu();
+            },
+          );
+        });
+      }, 500);
+    });
   });
 }
 
