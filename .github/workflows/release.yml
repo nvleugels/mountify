@@ -25,10 +25,22 @@ jobs:
       - name: Install native build deps
         run: npm run postinstall || true
 
+      - name: Generate Windows ICO
+        run: npm run gen-icon
+
+      - name: Decode certificate (if provided)
+        if: secrets.CSC_BASE64 != ''
+        shell: bash
+        run: |
+          echo "Decoding CSC_BASE64 to certificate.p12"
+          echo "${{ secrets.CSC_BASE64 }}" | base64 --decode > certificate.p12
+
       - name: Build Windows installer
         run: npm run build
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          CSC_LINK: file://${{ github.workspace }}/certificate.p12
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
 
       - name: Create GitHub Release and upload artifacts
         uses: softprops/action-gh-release@v1
