@@ -4,7 +4,7 @@
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)
 
-A free, open-source Windows application for mounting SFTP servers as local drives with a clean, minimal interface.
+**A free, open-source Windows application for mounting SFTP servers as local drives with a clean, minimal interface.**
 
 ## ✨ Features
 
@@ -27,23 +27,23 @@ A free, open-source Windows application for mounting SFTP servers as local drive
 
 ### Download
 
-Download the latest release from the [Releases page](https://github.com/yourusername/mountify/releases).
+Download the latest release from the [Releases page](https://github.com/nvleugels/mountify/releases).
 
 ### Development
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/mountify.git
+git clone https://github.com/nvleugels/mountify.git
 cd mountify
 
 # Install dependencies
 npm install
 
 # Run in development mode
-npm run electron:dev
+npm run dev
 
 # Build for production
-npm run electron:build
+npm run build
 ```
 
 ## 🎯 Usage
@@ -79,7 +79,7 @@ npm run electron:build
 ## 🏗️ Technical Stack
 
 - **Electron** - Desktop framework
-- **Vite** - Build tool and dev server
+- **Build tooling** - Project uses npm scripts for development and packaging
 - **Tailwind CSS** - Utility-first CSS framework
 - **Vanilla JavaScript** - No heavy frameworks, just clean JS
 - **electron-store** - Persistent storage with encryption
@@ -130,9 +130,9 @@ Mountify is provided as-is without warranty. Always ensure you have backups of i
 
 ## 📞 Support
 
-- 🐛 [Report a bug](https://github.com/yourusername/mountify/issues)
-- 💡 [Request a feature](https://github.com/yourusername/mountify/issues)
-- 💬 [Discussions](https://github.com/yourusername/mountify/discussions)
+- 🐛 [Report a bug](https://github.com/nvleugels/mountify/issues)
+- 💡 [Request a feature](https://github.com/nvleugels/mountify/issues)
+- 💬 [Discussions](https://github.com/nvleugels/mountify/discussions)
 
 ---
 
