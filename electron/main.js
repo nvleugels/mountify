@@ -25,6 +25,13 @@ const store = new Store({
   encryptionKey: "mountify-encryption-key-" + require("os").hostname(),
 });
 
+// Ensure Windows Start menu uses our AppUserModelID so shortcuts pick up the correct icon
+try {
+  app.setAppUserModelId("com.mountify.app");
+} catch (e) {
+  // ignore when not supported
+}
+
 let mainWindow;
 let tray;
 let isDev = !app.isPackaged;
@@ -46,7 +53,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
     },
-    icon: path.join(__dirname, "../images/mountify.png"),
+      icon: path.join(__dirname, "../images/mountify.ico"),
     show: false,
     frame: true,
     backgroundColor: "#ffffff",

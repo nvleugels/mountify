@@ -12,6 +12,9 @@
     "start": "electron .",
     "postinstall": "electron-builder install-app-deps"
   },
+  "scripts": {
+    "gen-icon": "node scripts/gen-icon.js"
+  },
   "dependencies": {
     "electron-store": "^8.1.0",
     "node-fetch": "^3.3.2"
@@ -36,7 +39,7 @@
       "target": [
         "nsis"
       ],
-      "icon": "images/mountify.png",
+      "icon": "images/mountify.ico",
       "requestedExecutionLevel": "requireAdministrator"
     },
     "nsis": {
