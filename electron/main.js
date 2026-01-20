@@ -13,6 +13,13 @@ const { spawn, exec } = require("child_process");
 const fs = require("fs");
 const https = require("https");
 const Store = require("electron-store");
+let autoUpdater;
+try {
+  // electron-updater is optional during development
+  ({ autoUpdater } = require("electron-updater"));
+} catch (e) {
+  console.warn("electron-updater not installed; auto-updates disabled");
+}
 
 const store = new Store({
   encryptionKey: "mountify-encryption-key-" + require("os").hostname(),
@@ -63,6 +70,31 @@ function createWindow() {
       mainWindow.show();
     }
     checkDependencies();
+
+    // Setup auto-updater event forwarding if available
+    if (autoUpdater) {
+      autoUpdater.autoDownload = true;
+      autoUpdater.on("checking-for-update", () => {
+        mainWindow.webContents.send("update-checking");
+      });
+      autoUpdater.on("update-available", (info) => {
+        mainWindow.webContents.send("update-available", info);
+      });
+      autoUpdater.on("update-not-available", (info) => {
+        mainWindow.webContents.send("update-not-available", info);
+      });
+      autoUpdater.on("download-progress", (progress) => {
+        mainWindow.webContents.send("download-progress", progress);
+      });
+      autoUpdater.on("update-downloaded", (info) => {
+        mainWindow.webContents.send("update-downloaded", info);
+      });
+
+      // Check for updates on startup when autoUpdater is available
+      autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+        console.warn("Auto-updater check failed:", err);
+      });
+    }
   });
 
   mainWindow.on("close", (event) => {
@@ -774,6 +806,52 @@ ipcMain.handle("check-dependencies", async () => {
     console.error("IPC: Error in check-dependencies handler:", error);
     return { winfsp: false, sshfs: false };
   }
+});
+
+// Allow renderer to request an update check (returns basic success/error)
+ipcMain.handle("check-for-updates", async () => {
+  if (!autoUpdater)
+    return { success: false, error: "auto-updater not available" };
+  try {
+    // Trigger a manual check; events are forwarded to renderer via the listeners above
+    const res = await autoUpdater.checkForUpdates();
+
+    // If electron-updater provides an updateInfo, emit the appropriate event
+    if (res && res.updateInfo) {
+      const info = res.updateInfo;
+      if (info.version && info.version !== app.getVersion()) {
+        mainWindow.webContents.send("update-available", info);
+      } else {
+        mainWindow.webContents.send("update-not-available", info);
+      }
+    }
+
+    // If a download promise exists, wire progress via original autoUpdater events
+    if (res && res.downloadPromise) {
+      res.downloadPromise.catch((e) => console.warn("Download failed:", e));
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.warn("check-for-updates failed:", err);
+    return { success: false, error: err.message };
+  }
+});
+
+// Quit and install handler for renderer (called when user accepts restart)
+ipcMain.handle("quit-and-install", async () => {
+  if (autoUpdater && typeof autoUpdater.quitAndInstall === "function") {
+    try {
+      autoUpdater.quitAndInstall();
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  // Fallback: just quit the app
+  app.quit();
+  return { success: true };
 });
 
 ipcMain.handle("install-dependencies", () => {

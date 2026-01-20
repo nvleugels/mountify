@@ -12,7 +12,7 @@
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/mountify.git
+git clone https://github.com/nvleugels/mountify.git
 cd mountify
 ```
 

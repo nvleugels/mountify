@@ -40,6 +40,20 @@ contextBridge.exposeInMainWorld("electronAPI", {
   onDependencyStatus: (callback) => {
     ipcRenderer.on("dependency-status", (event, status) => callback(status));
   },
+  // Auto-updater
+  checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
+  onUpdateAvailable: (callback) =>
+    ipcRenderer.on("update-available", (event, info) => callback(info)),
+  onUpdateNotAvailable: (callback) =>
+    ipcRenderer.on("update-not-available", (event, info) => callback(info)),
+  onDownloadProgress: (callback) =>
+    ipcRenderer.on("download-progress", (event, progress) =>
+      callback(progress),
+    ),
+  onUpdateDownloaded: (callback) =>
+    ipcRenderer.on("update-downloaded", (event, info) => callback(info)),
+  // Quit and install
+  quitAndInstall: () => ipcRenderer.invoke("quit-and-install"),
 });
 
 console.log("electronAPI exposed to window");

@@ -546,9 +546,42 @@
                 <h3 class="text-lg font-medium text-gray-900 mb-4">About</h3>
                 <div class="text-sm text-gray-600 space-y-2">
                   <p><strong>Version:</strong> 1.0.0</p>
+                  <div class="mt-2 space-y-2">
+                    <div class="flex items-center gap-3">
+                      <button
+                        id="btn-check-updates"
+                        class="inline-flex items-center px-3 py-1.5 bg-white text-gray-700 text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+                      >
+                        Check for updates
+                      </button>
+                      <span id="update-status" class="text-xs text-gray-500"
+                        >-</span
+                      >
+                      <button
+                        id="btn-restart-install"
+                        class="ml-2 inline-flex items-center px-3 py-1.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors hidden"
+                      >
+                        Restart & Install
+                      </button>
+                    </div>
+
+                    <div
+                      id="update-progress-container"
+                      class="w-full bg-gray-200 rounded-full h-2 overflow-hidden hidden"
+                    >
+                      <div
+                        id="update-progress"
+                        class="h-2 bg-primary-600 w-0"
+                      ></div>
+                    </div>
+                  </div>
                   <p><strong>License:</strong> MIT</p>
                   <p class="pt-2">
-                    <a href="#" class="text-primary-600 hover:text-primary-700"
+                    <a
+                      href="https://github.com/nvleugels/mountify"
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      class="text-primary-600 hover:text-primary-700"
                       >GitHub Repository</a
                     >
                   </p>

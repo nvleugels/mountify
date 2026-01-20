@@ -65,6 +65,25 @@ function setupEventListeners() {
   document
     .getElementById("btn-install-deps")
     .addEventListener("click", handleInstallDeps);
+
+  // Update check button
+  const checkUpdatesBtn = document.getElementById("btn-check-updates");
+  if (checkUpdatesBtn) {
+    checkUpdatesBtn.addEventListener("click", async () => {
+      const statusEl = document.getElementById("update-status");
+      if (statusEl) statusEl.textContent = "Checking for updates...";
+      try {
+        const res = await window.electronAPI.checkForUpdates();
+        // The main process will emit events for available/not-available and progress
+        if (!res) {
+          // Some hosts may return undefined; keep status until events arrive
+        }
+      } catch (err) {
+        if (statusEl) statusEl.textContent = `Check failed: ${err.message}`;
+        showToast("Error", `Update check failed: ${err.message}`, "error");
+      }
+    });
+  }
 }
 
 // Setup IPC listeners
@@ -129,6 +148,77 @@ function setupIPCListeners() {
       checkDependencies();
     }
   });
+
+  // Auto-updater events
+  if (window.electronAPI.onUpdateAvailable) {
+    window.electronAPI.onUpdateAvailable((info) => {
+      const statusEl = document.getElementById("update-status");
+      if (statusEl)
+        statusEl.textContent = `Update available: ${info.version} (downloading...)`;
+      showToast(
+        "Update",
+        `Update available: ${info.version} — downloading...`,
+        "info",
+      );
+    });
+  }
+
+  if (window.electronAPI.onUpdateNotAvailable) {
+    window.electronAPI.onUpdateNotAvailable((info) => {
+      const statusEl = document.getElementById("update-status");
+      if (statusEl) statusEl.textContent = `Up to date`;
+      showToast("Update", `No updates available.`, "success");
+    });
+  }
+
+  if (window.electronAPI.onDownloadProgress) {
+    window.electronAPI.onDownloadProgress((progress) => {
+      const statusEl = document.getElementById("update-status");
+      const container = document.getElementById("update-progress-container");
+      const bar = document.getElementById("update-progress");
+      const pct = Math.round((progress.percent || 0) * 100) / 100;
+      if (statusEl) statusEl.textContent = `Downloading: ${pct}%`;
+      if (bar && container) {
+        container.classList.remove("hidden");
+        bar.style.width = `${pct}%`;
+      }
+    });
+  }
+
+  if (window.electronAPI.onUpdateDownloaded) {
+    window.electronAPI.onUpdateDownloaded((info) => {
+      const statusEl = document.getElementById("update-status");
+      const container = document.getElementById("update-progress-container");
+      const bar = document.getElementById("update-progress");
+      if (statusEl) statusEl.textContent = `Update ready: ${info.version}`;
+      if (bar) bar.style.width = `100%`;
+      if (container) {
+        // keep full bar visible briefly
+        setTimeout(() => container.classList.add("hidden"), 3000);
+      }
+      showToast(
+        "Update",
+        `Update ${info.version} downloaded. Restart to install.`,
+        "success",
+      );
+      // Show restart/install button
+      const restartBtn = document.getElementById("btn-restart-install");
+      if (restartBtn) {
+        restartBtn.classList.remove("hidden");
+        restartBtn.onclick = async () => {
+          restartBtn.disabled = true;
+          restartBtn.textContent = "Restarting...";
+          try {
+            await window.electronAPI.quitAndInstall();
+          } catch (err) {
+            showToast("Error", `Failed to restart: ${err.message}`, "error");
+            restartBtn.disabled = false;
+            restartBtn.textContent = "Restart & Install";
+          }
+        };
+      }
+    });
+  }
 }
 
 // View management
