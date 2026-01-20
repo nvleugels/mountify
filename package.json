@@ -1,6 +1,6 @@
 {
   "name": "mountify",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "A free, open-source Windows application for mounting SFTP servers as local drives",
   "main": "electron/main.js",
   "author": "Mountify",
@@ -58,7 +58,9 @@
       {
         "from": "images/",
         "to": "images",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "publish": [
