@@ -54,6 +54,13 @@
       "buildResources": "images",
       "output": "release"
     },
+    "extraResources": [
+      {
+        "from": "images/",
+        "to": "images",
+        "filter": ["**/*"]
+      }
+    ],
     "publish": [
       {
         "provider": "github",

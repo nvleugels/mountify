@@ -25,6 +25,16 @@ const store = new Store({
   encryptionKey: "mountify-encryption-key-" + require("os").hostname(),
 });
 
+// Helper to resolve resource paths both in dev and when packaged.
+function getAppResource(relPath) {
+  try {
+    if (app.isPackaged) return path.join(process.resourcesPath, relPath);
+  } catch (e) {
+    // app may not be initialized yet in some contexts; fall back
+  }
+  return path.join(__dirname, "..", relPath);
+}
+
 // Ensure Windows Start menu uses our AppUserModelID so shortcuts pick up the correct icon
 try {
   app.setAppUserModelId("com.mountify.app");
@@ -53,7 +63,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
     },
-    icon: path.join(__dirname, "../images/mountify.ico"),
+    icon: getAppResource("images/mountify.ico"),
     show: false,
     frame: true,
     backgroundColor: "#ffffff",
@@ -121,11 +131,11 @@ function createWindow() {
 }
 
 function createTray() {
-  // Try several icon candidates to avoid empty tray icon on some systems
+  // Try several icon candidates (use resources path when packaged)
   const iconCandidates = [
-    path.join(__dirname, "../images/mountify.ico"),
-    path.join(__dirname, "../images/mountify.png"),
-    path.join(__dirname, "../images/mountify-256.png"),
+    getAppResource("images/mountify.ico"),
+    getAppResource("images/mountify.png"),
+    getAppResource("images/mountify-256.png"),
   ];
 
   let trayIcon = nativeImage.createEmpty();
@@ -134,13 +144,8 @@ function createTray() {
       if (fs.existsSync(p)) {
         const img = nativeImage.createFromPath(p);
         if (!img.isEmpty()) {
-          // Resize if needed for crisp tray rendering
           const size = img.getSize();
-          if (size.width > 16 || size.height > 16) {
-            trayIcon = img.resize({ width: 16, height: 16 });
-          } else {
-            trayIcon = img;
-          }
+          trayIcon = size.width > 16 || size.height > 16 ? img.resize({ width: 16, height: 16 }) : img;
           break;
         }
       }
