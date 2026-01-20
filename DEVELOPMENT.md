@@ -27,14 +27,10 @@ npm install
 ### Running in Development Mode
 
 ```bash
-npm run electron:dev
+npm run dev
 ```
 
-This will:
-
-- Start Vite dev server on http://localhost:5173
-- Launch Electron with hot reload enabled
-- Open DevTools automatically
+This will launch the app in development mode with live reload where available.
 
 ### Building for Production
 
@@ -72,11 +68,9 @@ mountify/
 - **IPC**: Communication between main and renderer processes
 - **Preload Script**: Secure bridge for exposing APIs to renderer
 
-### Vite
+### Build tooling
 
-- Fast development server with HMR
-- Optimized production builds
-- Plugin-based architecture
+- Development and packaging are handled by npm scripts in `package.json`.
 
 ### Tailwind CSS
 
@@ -210,7 +204,6 @@ const result = await window.electronAPI.myNewFeature(arg);
 
 - Check Node.js version (18+)
 - Clear `node_modules` and reinstall: `rm -rf node_modules && npm install`
-- Check for port conflicts (5173)
 
 **Build fails:**
 

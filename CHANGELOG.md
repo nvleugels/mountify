@@ -36,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Technical
 
 - Electron-based desktop application
-- Vite for fast development and optimized builds
+- Build tooling via npm scripts for development and packaging
 - Vanilla JavaScript (no heavy frameworks)
 - Tailwind CSS for modern UI
 - electron-store for persistent storage
